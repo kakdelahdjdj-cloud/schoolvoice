@@ -91,7 +91,8 @@ def _parse_timezone(raw: str) -> tzinfo:
 @lru_cache(maxsize=1)
 def get_settings() -> Settings:
     """Возвращает настройки (читаются один раз и кешируются)."""
-    token = os.getenv("BOT_TOKEN", "").strip()
+    # BOT_TOKEN — наше имя; TELEGRAM_BOT_TOKEN — так токен передают некоторые хостинги (FadeHost)
+    token = (os.getenv("BOT_TOKEN") or os.getenv("TELEGRAM_BOT_TOKEN") or "").strip()
     if not token:
         raise ConfigError(
             "Не задан BOT_TOKEN. Скопируйте .env.example в .env и впишите токен от @BotFather."
@@ -101,7 +102,9 @@ def get_settings() -> Settings:
             "BOT_TOKEN имеет неверный формат. Проверьте, что вы скопировали токен от @BotFather целиком."
         )
 
-    db_raw = os.getenv("DB_PATH", "data/schoolvoice.db").strip() or "data/schoolvoice.db"
+    # На хостинге папка /data сохраняется между перезапусками — база по умолчанию кладётся туда
+    default_db = "/data/schoolvoice.db" if Path("/data").is_dir() else "data/schoolvoice.db"
+    db_raw = os.getenv("DB_PATH", "").strip() or default_db
     db_path = Path(db_raw)
     if not db_path.is_absolute():
         db_path = BASE_DIR / db_path
